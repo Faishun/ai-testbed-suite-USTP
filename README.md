@@ -1,4 +1,5 @@
-====================================================================================
+===========================================================================
+
 The suite is intended for **Host (for example, Windows) --> VM (Ubuntu/Debian) setup**
 
 If you have a different setup, it is fully customizable within the repos individually!
@@ -14,4 +15,5 @@ Make sure to read each README.md for each repo! It is recommended to host your m
 
 **LM Studio** provides a more user-friendly deployment of your local models and allows you to manage
 how your GPU and CPU resources are being used and twist the parameters however you like.
-====================================================================================
+
+===========================================================================
