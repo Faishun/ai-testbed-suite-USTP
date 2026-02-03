@@ -6,7 +6,7 @@ If you have a different setup, it is fully customizable within the repos individ
 
 If you'd like to start with VM setup, the socat command for port forwarding will be useful for you:
 ```bash
-socat -v TCP-LISTEN:8000,reuseaddr,fork TCP:192.168.56.1:8000
+socat -v TCP-LISTEN:8000,reuseaddr,fork TCP:<IP_to_access_your_VM_from_host>:8000
 ```
 Otherwise, you can also use an SSH tunnel.
 
