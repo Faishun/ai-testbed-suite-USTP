@@ -16,4 +16,7 @@ Make sure to read each README.md for each repo! It is recommended to host your m
 **LM Studio** provides a more user-friendly deployment of your local models and allows you to manage
 how your GPU and CPU resources are being used and twist the parameters however you like.
 
+**Note:** the setup.sh and other repos has been tested in Ubuntu 22.04 VirtualBox VM environment,
+however, it must work with Windows (excluding setup.sh, you'd have to clone and create your conda env manually), MacOS and other Linux distros.
+
 ===========================================================================
