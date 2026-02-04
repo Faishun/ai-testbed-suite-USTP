@@ -9,7 +9,10 @@ If you'd like to start with VM setup, the socat command for port forwarding will
 ```bash
 socat -v TCP-LISTEN:8000,reuseaddr,fork TCP:<IP_to_access_your_VM_from_host>:8000
 ```
-Otherwise, you can also use an SSH tunnel.
+Otherwise, you can also use an SSH tunnel:
+```bash
+ssh -o AddressFamily=inet -o ExitOnForwardFailure=yes -R 127.0.0.1:8000:localhost:8000 user@VM_IP -p FORWARDED_PORT_FOR_SSH
+```
 
 Make sure to read each README.md for each repo! It is recommended to host your models on
 **LM Studio,** since it supports **MacOS/Linux/Windows** simultaneously: https://lmstudio.ai/download
