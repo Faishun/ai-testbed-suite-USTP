@@ -36,4 +36,6 @@ Well, that is because
 1. Garak has to parse your responses and requests differently for AI models for each attack, so the **.json i have provided**
 should work with all probes that Garak offers.
 2. LocalGuard tests only DAN and PrompInjection! With a standalone garak env, you can freely explore
-more probes, making sure that your environment doesn't break for all three testing suites. 
+more probes, making sure that your environment doesn't break for all three testing suites.
+
+**An example report is provided in .pdf so that you know what to expect when everything works correctly.**
