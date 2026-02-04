@@ -23,4 +23,17 @@ how your GPU and CPU resources are being used and twist the parameters however y
 **Note:** the setup.sh and other repos have been tested in Ubuntu 22.04 VirtualBox VM environment,
 however, it must work with Windows (excluding setup.sh, you'd have to clone and create your conda env manually), MacOS and other Linux distros.
 
+What to expect from this testbed suite?
 ===========================================================================
+
+This suite includes **AgentDojo, Garak and LocalGuard (Garak + Inspect AI).** The first one allows you to test your AI models
+with various attacks and defenses combined, while LocalGuard scans your model with Garak and another Local LLM as a Judge and generates
+a pdf report with overall score for your model and security passes/fails. 
+
+**Then why am I including a standalone Garak version?**
+
+Well, that is because 
+1. Garak has to parse your responses and requests differently for AI models for each attack, so the **.json i have provided**
+should work with all probes that Garak offers.
+2. LocalGuard tests only DAN and PrompInjection! With a standalone garak env, you can freely explore
+more probes, making sure that your environment doesn't break for all three testing suites. 
