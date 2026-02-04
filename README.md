@@ -1,3 +1,4 @@
+Prerequisites: Python 3.12, conda (any version that works with 3.12).
 ===========================================================================
 
 The suite is intended for **Host (for example, Windows) --> VM (Ubuntu/Debian) setup**
