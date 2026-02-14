@@ -26,7 +26,7 @@ however, it must work with Windows (excluding setup.sh, you'd have to clone and 
 What to expect from this testbed suite?
 ===========================================================================
 
-This suite includes **AgentDojo, Garak and LocalGuard (Garak + Inspect AI).** The first one allows you to test your AI models
+This suite includes **AgentDojo, Garak, Augustus (Garak Alternative) and LocalGuard (Garak + Inspect AI).** The first one allows you to test your AI models
 with various attacks and defenses combined, while LocalGuard scans your model with Garak and another Local LLM as a Judge and generates
 a pdf report with overall score for your model and security passes/fails. 
 
