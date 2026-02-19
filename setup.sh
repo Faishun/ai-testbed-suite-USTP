@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-### CONFIG ###
-ENV_AD_GARAK="agentdojo-garak"
-ENV_LOCALGUARD="localguard"
+###############################################################################
+# CONFIG
+###############################################################################
 
-PYTHON_VERSION_AD_GARAK="3.12"
-PYTHON_VERSION_LOCALGUARD="3.12"
+ENV_NAME="ai-testbed"
+PYTHON_VERSION="3.12"
 
 BASE_DIR="$HOME/ai-testbed-suite"
 
@@ -14,6 +14,7 @@ AGENTDOJO_REPO="https://github.com/Faishun/agentdojo-quickstart.git"
 GARAK_REPO="https://github.com/Faishun/garak-local-lmstudio.git"
 LOCALGUARD_REPO="https://github.com/Faishun/LocalGuard.git"
 AUGUSTUS_REPO="https://github.com/Faishun/augustus-local-llm-openai.git"
+SUITE_WEB_REPO="https://github.com/Faishun/suite_web.git"
 
 ###############################################################################
 # FUNCTIONS
@@ -26,6 +27,9 @@ clone_or_pull () {
     if [ -d "$dir_name/.git" ]; then
         echo "🔄 Updating $dir_name"
         git -C "$dir_name" pull
+    elif [ -d "$dir_name" ]; then
+        echo "⚠️ Directory $dir_name exists but is not a git repo."
+        echo "Skipping clone."
     else
         echo "⬇️  Cloning $dir_name"
         git clone "$repo_url" "$dir_name"
@@ -40,16 +44,15 @@ configure_channels () {
 }
 
 create_env () {
-    local env_name=$1
-    local py_version=$2
-
-    if conda env list | grep -q "^$env_name "; then
-        echo "⚠️  Removing existing $env_name"
-        conda remove -n "$env_name" --all -y
+    if conda env list | grep -q "^$ENV_NAME "; then
+        echo "⚠️  Removing existing $ENV_NAME"
+        conda remove -n "$ENV_NAME" --all -y
     fi
 
-    conda create -n "$env_name" python="$py_version" -y
-    conda activate "$env_name"
+    echo "🐍 Creating env: $ENV_NAME"
+    conda create -n "$ENV_NAME" python="$PYTHON_VERSION" -y
+    conda activate "$ENV_NAME"
+
     configure_channels
     python -m pip install --upgrade pip setuptools wheel
 }
@@ -74,7 +77,7 @@ install_system_deps () {
     fi
 
     if [ "$NEED_INSTALL" = true ]; then
-        echo "⚙️  Installing missing system dependencies..."
+        echo "⚙️ Installing missing system dependencies..."
 
         if [ -f /etc/debian_version ]; then
             sudo apt update
@@ -85,11 +88,60 @@ install_system_deps () {
             sudo pacman -Sy --noconfirm go make
         else
             echo "❌ Unsupported Linux distribution."
-            echo "Please install Go and make manually."
             exit 1
         fi
     fi
 }
+
+###############################################################################
+# ENSURE CONDA IS INSTALLED
+###############################################################################
+
+echo "🔎 Checking for Conda..."
+
+if command -v conda &>/dev/null; then
+    echo "✅ Conda found: $(conda --version)"
+else
+    echo "❌ Conda not found. Attempting installation..."
+
+    INSTALLER="/tmp/miniconda.sh"
+
+    # Detect architecture
+    ARCH=$(uname -m)
+
+    if ! command -v curl &>/dev/null; then
+    echo "❌ curl is required but not installed."
+    exit 1
+    fi
+
+    if [[ "$ARCH" == "x86_64" ]]; then
+        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+    elif [[ "$ARCH" == "aarch64" ]]; then
+        CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh"
+    else
+        echo "❌ Unsupported architecture: $ARCH"
+        exit 1
+    fi
+
+    echo "⬇️ Downloading Miniconda..."
+    curl -fsSL "$CONDA_URL" -o "$INSTALLER"
+
+    echo "⚙️ Installing Miniconda..."
+    bash "$INSTALLER" -b -p "$HOME/miniconda3"
+
+    rm -f "$INSTALLER"
+
+    # Initialize Conda permanently for future shells
+    "$HOME/miniconda3/bin/conda" init
+
+    # Initialize Conda for this shell
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+
+    echo "✅ Miniconda installed successfully."
+fi
+
+# Ensure conda shell functions are available
+source "$(conda info --base)/etc/profile.d/conda.sh"
 
 ###############################################################################
 # MAIN
@@ -100,79 +152,77 @@ mkdir -p "$BASE_DIR"
 cd "$BASE_DIR"
 
 if ! command -v conda &>/dev/null; then
-    echo "❌ Conda not found in PATH"
+    echo "❌ Conda not found in PATH. The installation may have partially failed."
     exit 1
 fi
 
-source "$(conda info --base)/etc/profile.d/conda.sh"
-
 ###############################################################################
-# SYSTEM DEPENDENCIES FOR AUGUSTUS
+# SYSTEM DEPENDENCIES
 ###############################################################################
 install_system_deps
 
 ###############################################################################
 # CLONE REPOS
 ###############################################################################
+clone_or_pull "$SUITE_WEB_REPO" "suite_web"
 clone_or_pull "$AGENTDOJO_REPO" "agentdojo-quickstart"
 clone_or_pull "$GARAK_REPO" "garak-local-lmstudio"
 clone_or_pull "$LOCALGUARD_REPO" "LocalGuard"
 clone_or_pull "$AUGUSTUS_REPO" "augustus-local-llm-openai"
 
 ###############################################################################
-# ENV 1: AGENTDOJO + GARAK
+# SINGLE ENVIRONMENT
 ###############################################################################
-echo "🐍 Creating env: $ENV_AD_GARAK"
-create_env "$ENV_AD_GARAK" "$PYTHON_VERSION_AD_GARAK"
+create_env
 
-echo "🔧 Installing agentdojo (editable)"
-pip install -e "$BASE_DIR/agentdojo-quickstart"
+echo "🔧 Installing agentdojo"
+python -m pip install -e "$BASE_DIR/agentdojo-quickstart"
 
-echo "🛡️ Installing garak (official)"
-pip install -U garak
-
-conda deactivate
-
-###############################################################################
-# ENV 2: LOCALGUARD
-###############################################################################
-echo "🐍 Creating env: $ENV_LOCALGUARD"
-create_env "$ENV_LOCALGUARD" "$PYTHON_VERSION_LOCALGUARD"
+echo "🛡️ Installing garak"
+python -m pip install -U garak
 
 echo "📄 Installing LocalGuard requirements"
-pip install -r "$BASE_DIR/LocalGuard/requirements.txt"
+python -m pip install -r "$BASE_DIR/LocalGuard/requirements.txt"
 
-conda deactivate
+echo "🌐 Installing suite_web requirements"
+python -m pip install -r "$BASE_DIR/suite_web/requirements.txt"
 
 ###############################################################################
 # FINAL MESSAGE
 ###############################################################################
 echo ""
 echo "██████████████████████████████████████████████████████████████████████████"
-echo "█                                                                            █"
-echo "█   🛡️  AI SECURITY TESTBED – MODULAR SUITE                                  █"
-echo "█                                                                            █"
-echo "█   Components installed:                                                     █"
-echo "█     • agentdojo-quickstart                                                  █"
-echo "█     • garak-local-lmstudio                                                   █"
-echo "█     • LocalGuard                                                            █"
-echo "█     • augustus-local-llm-openai (Go-based, no Conda env)                   █"
-echo "█                                                                            █"
-echo "█   📚 YOU MUST READ README.md IN EACH REPOSITORY.                            █"
-echo "█                                                                            █"
-echo "█   This script only installs dependencies and environments.                  █"
-echo "█   It does NOT configure models or start services.                           █"
-echo "█                                                                            █"
+echo "█                                                                        █"
+echo "█   🛡️  AI SECURITY TESTBED – SINGLE ENVIRONMENT                         █"
+echo "█                                                                        █"
+echo "█   Installed in: $ENV_NAME                                              █"
+echo "█                                                                        █"
+echo "█   Components:                                                          █"
+echo "█     • agentdojo-quickstart                                             █"
+echo "█     • garak-local-lmstudio                                             █"
+echo "█     • LocalGuard                                                       █"
+echo "█     • augustus-local-llm-openai (Go-based)                             █"
+echo "█                                                                        █"
 echo "██████████████████████████████████████████████████████████████████████████"
 echo ""
 
 echo "✅ AI SECURITY TESTBED SETUP COMPLETE"
 echo ""
-echo "Activate environments:"
-echo "  🔹 AgentDojo + Garak : conda activate $ENV_AD_GARAK"
-echo "  🔹 LocalGuard        : conda activate $ENV_LOCALGUARD"
+echo "Activate environment:"
+echo "  conda activate $ENV_NAME"
 echo ""
 echo "To build Augustus:"
 echo "  cd $BASE_DIR/augustus-local-llm-openai"
 echo "  make"
+echo ""
+
+echo "To run the web UI (in one terminal):"
+echo "  conda activate $ENV_NAME"
+echo "  set -a && source $BASE_DIR/suite_web/.env && set +a"
+echo "  python -m suite_web.app"
+echo ""
+echo "To run the worker (in another terminal):"
+echo "  conda activate $ENV_NAME"
+echo "  set -a && source $BASE_DIR/suite_web/.env && set +a"
+echo "  python -m suite_web.worker"
 echo ""
